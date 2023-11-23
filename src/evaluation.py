@@ -41,6 +41,7 @@ class MSE(Evaluation):
             logging.info("Calculate MSE")
             mse = mean_squared_error(y_true, y_pred)
             logging.info("MSE: {}".format(mse))
+            return mse
         except Exception as e:
             logging.error("Error in Calculating MSE: {}".format(e))
             raise e

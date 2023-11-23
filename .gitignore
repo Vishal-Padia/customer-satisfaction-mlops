@@ -173,4 +173,8 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+
+# Directory created by Mlflow
+Users/
+
 # End of https://www.toptal.com/developers/gitignore/api/python
