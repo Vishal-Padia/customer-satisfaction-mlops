@@ -3,7 +3,7 @@ import click
 from typing import cast
 from pipelines.deployment_pipepline import (
     continous_deployment_pipeline,
-    # inference_pipeline,
+    inference_pipeline,
 )
 from rich import print
 from zenml.integrations.mlflow.mlflow_utils import get_tracking_uri
@@ -46,8 +46,11 @@ def main(config: str, min_accuracy: float):
             workers=3,
             timeout=60,
         )
-    # if predict:
-    #     inference_pipeline()
+    if predict:
+        inference_pipeline(
+            pipeline_name="continuous_deployment_pipeline",
+            pipeline_step_name="mlflow_model_deployer_step",
+        )
     print(
         "You can run:\n "
         f"[italic green]    mlflow ui --backend-store-uri '{get_tracking_uri()}"
