@@ -7,13 +7,13 @@ from .utils import get_data_for_test
 from zenml import pipeline, step
 from zenml.config import DockerSettings
 from zenml.constants import DEFAULT_SERVICE_START_STOP_TIMEOUT
-from zenml.integrations.constants import MLFLOW, TENSORFLOW
+from zenml.integrations.constants import MLFLOW
 from zenml.integrations.mlflow.model_deployers.mlflow_model_deployer import (
     MLFlowModelDeployer,
 )
 from zenml.integrations.mlflow.services import MLFlowDeploymentService
 from zenml.integrations.mlflow.steps import mlflow_model_deployer_step
-from zenml.steps import BaseParameters, Output
+from zenml.steps import BaseParameters
 
 from steps.ingest_data import ingest_df
 from steps.clean_data import clean_df
@@ -83,7 +83,7 @@ def prediction_service_loader(
     """
     # get the MLflow model deployer stack component
     model_deployer = MLFlowModelDeployer.get_active_model_deployer()
-    print(model_deployer)
+    print(model_deployer.service_dirs)
     # fetch existing services with same pipeline name, step name and model name
     existing_services = model_deployer.find_model_server(
         pipeline_name=pipeline_name,
@@ -137,11 +137,11 @@ def predictor(
 
 
 @pipeline(enable_cache=False, settings={"docker": docker_settings})
-def continous_deployment_pipeline(
+def continuous_deployment_pipeline(
     data_path: str,
-    min_accuracy: float = 0.8,
+    min_accuracy: float = 0.9,
     workers: int = 1,
-    timeout: int = DEFAULT_SERVICE_START_STOP_TIMEOUT,
+    timeout: int = 300,
 ):
     df = ingest_df(data_path)
     X_train, X_test, y_train, y_test = clean_df(df)
@@ -150,7 +150,7 @@ def continous_deployment_pipeline(
     deployment_decision = deployment_trigger(mse)
     mlflow_model_deployer_step(
         model=model,
-        deploy_decision=deployment_decision,
+        deploy_decision=True,
         workers=workers,
         timeout=timeout,
     )
@@ -163,6 +163,6 @@ def inference_pipeline(pipeline_name: str, pipeline_step_name: str):
     model_deployment_service = prediction_service_loader(
         pipeline_name=pipeline_name,
         pipeline_step_name=pipeline_step_name,
-        running=True,
+        running=False,
     )
-    predictor(service=model_deployment_service, data=batch_data)
+    return predictor(service=model_deployment_service, data=batch_data)

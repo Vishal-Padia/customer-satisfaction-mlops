@@ -2,7 +2,7 @@ import click
 
 from typing import cast
 from pipelines.deployment_pipepline import (
-    continous_deployment_pipeline,
+    continuous_deployment_pipeline,
     inference_pipeline,
 )
 from rich import print
@@ -40,7 +40,7 @@ def main(config: str, min_accuracy: float):
     predict = config == PREDICT or config == DEPLOY_AND_PREDICT
 
     if deploy:
-        continous_deployment_pipeline(
+        continuous_deployment_pipeline(
             data_path="data/olist_customers_dataset.csv",
             min_accuracy=min_accuracy,
             workers=3,
@@ -66,9 +66,11 @@ def main(config: str, min_accuracy: float):
         pipeline_step_name="mlflow_model_deployer_step",
         model_name="model",
     )
-
+    if existing_services[0]:
+        print(f"Existing Services present {existing_services[0]}")
     if existing_services:
         service = cast(MLFlowDeploymentService, existing_services[0])
+        print(service)
         if service.is_running:
             print(
                 f"The MLflow prediction server is running locally as a daemon "
