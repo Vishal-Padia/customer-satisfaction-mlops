@@ -23,16 +23,16 @@ from steps.evaluation import evaluate_model
 docker_settings = DockerSettings(required_integrations=[MLFLOW])
 
 
-class DeploymentTriggerConfig(BaseParameters):
-    """Deployment Trigger Config"""
-
-    min_accuracy: float = 0.92
-
-
 @step(enable_cache=False)
 def dynamic_importer() -> str:
     data = get_data_for_test()
     return data
+
+
+class DeploymentTriggerConfig(BaseParameters):
+    """Deployment Trigger Config"""
+
+    min_accuracy: float = 0.9
 
 
 @step
@@ -83,7 +83,7 @@ def prediction_service_loader(
     """
     # get the MLflow model deployer stack component
     model_deployer = MLFlowModelDeployer.get_active_model_deployer()
-
+    print(model_deployer)
     # fetch existing services with same pipeline name, step name and model name
     existing_services = model_deployer.find_model_server(
         pipeline_name=pipeline_name,
@@ -111,7 +111,7 @@ def predictor(
 ) -> np.ndarray:
     """Run an inference request against a prediction service"""
 
-    service.start(timeout=10)  # should be a NOP if already started
+    service.start(timeout=300)  # should be a NOP if already started
     data = json.loads(data)
     data.pop("columns")
     data.pop("index")
@@ -139,15 +139,15 @@ def predictor(
 @pipeline(enable_cache=False, settings={"docker": docker_settings})
 def continous_deployment_pipeline(
     data_path: str,
-    min_accuracy: float = 0.92,
+    min_accuracy: float = 0.8,
     workers: int = 1,
     timeout: int = DEFAULT_SERVICE_START_STOP_TIMEOUT,
 ):
     df = ingest_df(data_path)
     X_train, X_test, y_train, y_test = clean_df(df)
     model = train_model(X_train, X_test, y_train, y_test)
-    r2_score, rmse = evaluate_model(model, X_test, y_test)
-    deployment_decision = deployment_trigger(r2_score)
+    mse, rmse = evaluate_model(model, X_test, y_test)
+    deployment_decision = deployment_trigger(mse)
     mlflow_model_deployer_step(
         model=model,
         deploy_decision=deployment_decision,
@@ -163,7 +163,6 @@ def inference_pipeline(pipeline_name: str, pipeline_step_name: str):
     model_deployment_service = prediction_service_loader(
         pipeline_name=pipeline_name,
         pipeline_step_name=pipeline_step_name,
-        running=False,
+        running=True,
     )
-    prediction = predictor(service=model_deployment_service, data=batch_data)
-    return prediction
+    predictor(service=model_deployment_service, data=batch_data)

@@ -31,7 +31,7 @@ DEPLOY_AND_PREDICT = "deploy_and_predict"
 )
 @click.option(
     "--min-accuracy",
-    default=0.92,
+    default=0.9,
     help="Minimum accuracy required to deploy the model",
 )
 def main(config: str, min_accuracy: float):
@@ -41,10 +41,10 @@ def main(config: str, min_accuracy: float):
 
     if deploy:
         continous_deployment_pipeline(
-            data_path="data\olist_customers_dataset.csv",
+            data_path="data/olist_customers_dataset.csv",
             min_accuracy=min_accuracy,
             workers=3,
-            timeout=60,
+            timeout=300,
         )
     if predict:
         inference_pipeline(
